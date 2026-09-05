@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; margin: 0; padding: 0; }
+  body {
+    background-color: #080d1a;
+    color: #f1f5f9;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .font-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+}
+
+@layer components {
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+  /* Leaflet overrides for dark theme */
+  .leaflet-container { background: #0f172a !important; font-family: 'Inter', sans-serif; }
+  .leaflet-popup-content-wrapper {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #334155 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important;
+  }
+  .leaflet-popup-tip { background: #1e293b !important; }
+  .leaflet-popup-close-button { color: #94a3b8 !important; }
+  .leaflet-control-zoom a {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+  }
+  .leaflet-control-zoom a:hover { background: #334155 !important; }
+  .leaflet-control-attribution {
+    background: rgba(15,23,42,0.8) !important;
+    color: #64748b !important;
+    font-size: 10px !important;
+  }
+  .leaflet-control-attribution a { color: #94a3b8 !important; }
+
+  /* Pulse animation for critical alerts */
+  .alert-critical-pulse {
+    animation: alertPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes alertPulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+    50% { opacity: 0.9; box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+  }
+
+  /* Status indicator */
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .status-dot.online { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+  .status-dot.offline { background: #ef4444; }
+  .status-dot.degraded { background: #eab308; }
+}

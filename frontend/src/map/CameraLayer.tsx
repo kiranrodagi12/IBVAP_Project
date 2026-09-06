@@ -30,7 +30,7 @@ interface CameraLayerProps {
 }
 
 export function CameraLayer({ showFov, showMarker }: CameraLayerProps) {
-  const { cameras, setSelectedCamera } = useAppStore();
+  const { cameras, setSelectedCamera, openEditCameraOnMap, setDraftZone, setMapMode } = useAppStore();
 
   return (
     <>
@@ -41,6 +41,17 @@ export function CameraLayer({ showFov, showMarker }: CameraLayerProps) {
         );
         const colors = FOV_COLORS[cam.status];
 
+        const handleCreateZoneFromCamera = () => {
+          setDraftZone({
+            id: `ZONE-CAM-${cam.id}`,
+            name: `${cam.name} Coverage Zone`,
+            type: 'restricted',
+            linkedCameraIds: [cam.id],
+            coordinates: sectorCoords.slice(1, -1) // sector arc points
+          });
+          setMapMode('ADD_ZONE');
+        };
+
         return (
           <div key={cam.id}>
             {/* FOV sector */}
@@ -50,13 +61,13 @@ export function CameraLayer({ showFov, showMarker }: CameraLayerProps) {
                 pathOptions={{
                   color: colors.stroke,
                   fillColor: colors.fill,
-                  fillOpacity: cam.status === 'online' ? 0.10 : 0.05,
-                  weight: 1,
+                  fillOpacity: cam.status === 'online' ? 0.12 : 0.05,
+                  weight: 1.5,
                   dashArray: cam.status === 'offline' ? '4,4' : undefined,
                 }}
               >
                 <Tooltip direction="center" permanent={false}>
-                  <div className="text-xs">
+                  <div className="text-xs font-mono">
                     <strong>{cam.id}</strong> — {cam.name}<br />
                     Dir: {cam.direction}° ({bearingToCompass(cam.direction)}) | FOV: {cam.fov}° | Range: {cam.range}m
                   </div>
@@ -72,21 +83,35 @@ export function CameraLayer({ showFov, showMarker }: CameraLayerProps) {
                 eventHandlers={{ click: () => setSelectedCamera(cam.id) }}
               >
                 <Popup>
-                  <div className="min-w-[200px]">
+                  <div className="min-w-[220px]">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-base">{cam.id}</span>
-                      <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                      <span className="font-bold text-base font-mono">{cam.id}</span>
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
                         cam.status === 'online' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
                       }`}>{cam.status.toUpperCase()}</span>
                     </div>
-                    <div className="text-sm text-gray-300 mb-2">{cam.name}</div>
-                    <div className="space-y-1 text-xs text-gray-400">
-                      <div>📍 {formatCoords(cam.lat, cam.lng, 4)}</div>
+                    <div className="text-xs text-gray-200 font-semibold mb-2">{cam.name}</div>
+                    <div className="space-y-1 text-xs text-gray-300 font-mono">
+                      <div>📍 Lat: {cam.lat.toFixed(6)}</div>
+                      <div>📍 Lng: {cam.lng.toFixed(6)}</div>
                       <div>🎯 Direction: {cam.direction}° ({bearingToCompass(cam.direction)})</div>
-                      <div>📐 FOV: {cam.fov}°</div>
+                      <div>📐 Field of View: {cam.fov}°</div>
                       <div>📏 Range: {cam.range}m</div>
-                      <div>🎬 FPS: {cam.fps ?? 'N/A'}</div>
                       <div>🔧 Calibration: {cam.calibrationValid ? '✅ Valid' : '❌ Invalid'}</div>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-gray-700 flex gap-1.5">
+                      <button
+                        onClick={() => openEditCameraOnMap(cam)}
+                        className="flex-1 text-[11px] bg-sky-900/60 hover:bg-sky-800 text-sky-200 py-1 px-2 rounded font-medium transition-colors"
+                      >
+                        ✏️ Edit Camera
+                      </button>
+                      <button
+                        onClick={handleCreateZoneFromCamera}
+                        className="flex-1 text-[11px] bg-orange-900/60 hover:bg-orange-800 text-orange-200 py-1 px-2 rounded font-medium transition-colors"
+                      >
+                        📐 Create Zone
+                      </button>
                     </div>
                   </div>
                 </Popup>

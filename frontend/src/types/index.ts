@@ -18,9 +18,23 @@ export type EventType =
 
 export type LocationStatus = 'estimated' | 'confirmed' | 'simulated' | 'unavailable';
 
+export type MapInteractionMode = 'NORMAL' | 'ADD_CAMERA' | 'EDIT_CAMERA' | 'ADD_ZONE' | 'EDIT_ZONE' | 'CALIBRATION';
+
 export interface LatLng {
   lat: number;
   lng: number;
+}
+
+export interface BoundingBox {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export interface PixelCoordinate {
+  x: number;
+  y: number;
 }
 
 export interface Camera {
@@ -39,6 +53,8 @@ export interface Camera {
   calibrationValid: boolean;
   lastSeen?: string;
   description?: string;
+  coverage?: LatLng[];
+  createdAt?: string;
 }
 
 export interface Zone {
@@ -53,12 +69,28 @@ export interface Zone {
   color?: string;
 }
 
+export interface PersonDetection {
+  personId: number | string;
+  cameraId: string;
+  boundingBox?: BoundingBox;
+  pixelCoordinate?: PixelCoordinate;
+  geoCoordinate?: LatLng;
+  confidence?: number;
+  timestamp?: string;
+  zoneId?: string;
+  zoneName?: string;
+}
+
 export interface Person {
   id: string;
   trackId: number;
   currentLat?: number;
   currentLng?: number;
+  pixelX?: number;
+  pixelY?: number;
+  boundingBox?: BoundingBox;
   currentZoneId?: string;
+  currentZoneName?: string;
   currentCameraId?: string;
   firstSeen: string;
   lastSeen: string;
@@ -71,9 +103,12 @@ export interface TrackPoint {
   personId: string;
   lat: number;
   lng: number;
+  pixelX?: number;
+  pixelY?: number;
   timestamp: string;
   cameraId?: string;
   zoneId?: string;
+  zoneName?: string;
   confidence?: number;
   locationStatus: LocationStatus;
 }
@@ -83,10 +118,14 @@ export interface IBVAPEvent {
   type: EventType;
   personId?: string;
   cameraId?: string;
+  cameraLat?: number;
+  cameraLng?: number;
   zoneId?: string;
   zoneName?: string;
   lat?: number;
   lng?: number;
+  pixelX?: number;
+  pixelY?: number;
   timestamp: string;
   confidence?: number;
   locationStatus?: LocationStatus;
@@ -105,10 +144,14 @@ export interface Alert {
   type: EventType;
   personId?: string;
   cameraId?: string;
+  cameraLat?: number;
+  cameraLng?: number;
   zoneId?: string;
   zoneName?: string;
   lat?: number;
   lng?: number;
+  pixelX?: number;
+  pixelY?: number;
   timestamp: string;
   message: string;
   confidence?: number;
@@ -120,15 +163,21 @@ export interface Alert {
 export interface CalibrationPoint {
   imageX: number;
   imageY: number;
-  lat: number;
-  lng: number;
-  label: string;
+  worldX?: number;
+  worldY?: number;
+  lat?: number;
+  lng?: number;
+  label?: string;
 }
 
 export interface CameraCalibration {
   cameraId: string;
+  imageWidth?: number;
+  imageHeight?: number;
   points: CalibrationPoint[];
   homographyMatrix?: number[][];
+  referenceLatitude?: number;
+  referenceLongitude?: number;
   valid: boolean;
   calibratedAt?: string;
   notes?: string;

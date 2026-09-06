@@ -20,7 +20,7 @@ function generateId(prefix: string) {
 export function useDemo() {
   const {
     demoRunning, demoStep,
-    zones, persons,
+    zones, cameras,
     setDemoRunning, setDemoStep,
     upsertPerson, addTrackPoint,
     addEvent, addAlert, updateStats, setMapCenter,
@@ -37,6 +37,7 @@ export function useDemo() {
 
     const point = DEMO_PERSON_PATH[step];
     const latLng = { lat: point.lat, lng: point.lng };
+    const currentCamera = cameras.find(c => c.id === point.cameraId);
 
     // Find current zone
     const currentZone = findZoneForPoint(latLng, zones);
@@ -49,7 +50,10 @@ export function useDemo() {
       trackId: 17,
       currentLat: point.lat,
       currentLng: point.lng,
+      pixelX: point.pixelX ?? 825,
+      pixelY: point.pixelY ?? 800,
       currentZoneId: currentZone?.id,
+      currentZoneName: currentZone?.name,
       currentCameraId: point.cameraId,
       firstSeen: DEMO_PERSON_PATH[0].timestamp,
       lastSeen: point.timestamp,
@@ -60,7 +64,7 @@ export function useDemo() {
     upsertPerson(person);
     addTrackPoint(point);
 
-    // Update map center
+    // Update map center smoothly
     setMapCenter([point.lat, point.lng]);
 
     // Detect zone crossing
@@ -72,19 +76,18 @@ export function useDemo() {
       const alertId = generateId('ALT');
       const now = new Date().toISOString();
 
-      // Determine priority
       let priority: Alert['priority'] = 'low';
       let message = '';
 
       if (crossingType === 'danger_intrusion') {
         priority = 'critical';
-        message = `🚨 CRITICAL: Person #17 entered DANGER zone — ${currentZone?.name}`;
+        message = `🚨 CRITICAL: Person #17 entered DANGER zone — ${currentZone?.name ?? 'Inner Danger Zone'}`;
       } else if (crossingType === 'restricted_intrusion') {
         priority = 'high';
-        message = `⚠️ HIGH: Person #17 entered RESTRICTED zone — ${currentZone?.name}`;
+        message = `⚠️ HIGH: Person #17 entered RESTRICTED zone — ${currentZone?.name ?? 'Restricted Perimeter'}`;
       } else if (crossingType === 'border_crossed') {
         priority = 'high';
-        message = `⚠️ HIGH: Person #17 crossed boundary into ${currentZone?.name}`;
+        message = `⚠️ HIGH: Person #17 crossed boundary into ${currentZone?.name ?? 'Monitored Zone'}`;
       } else {
         priority = 'medium';
         message = `Person #17 entered ${currentZone?.name ?? 'monitored zone'}`;
@@ -95,10 +98,14 @@ export function useDemo() {
         type: crossingType,
         personId: 'P-17',
         cameraId: point.cameraId,
+        cameraLat: currentCamera?.lat,
+        cameraLng: currentCamera?.lng,
         zoneId: currentZone?.id,
         zoneName: currentZone?.name,
         lat: point.lat,
         lng: point.lng,
+        pixelX: point.pixelX ?? 825,
+        pixelY: point.pixelY ?? 800,
         timestamp: now,
         confidence: point.confidence,
         locationStatus: 'simulated',
@@ -115,10 +122,14 @@ export function useDemo() {
         type: crossingType,
         personId: 'P-17',
         cameraId: point.cameraId,
+        cameraLat: currentCamera?.lat,
+        cameraLng: currentCamera?.lng,
         zoneId: currentZone?.id,
         zoneName: currentZone?.name,
         lat: point.lat,
         lng: point.lng,
+        pixelX: point.pixelX ?? 825,
+        pixelY: point.pixelY ?? 800,
         timestamp: now,
         message,
         confidence: point.confidence,
@@ -132,17 +143,20 @@ export function useDemo() {
       });
     }
 
-    // Always add detection event for first step
     if (step === 0) {
       addEvent({
         id: generateId('EVT'),
         type: 'person_detected',
         personId: 'P-17',
         cameraId: point.cameraId,
+        cameraLat: currentCamera?.lat,
+        cameraLng: currentCamera?.lng,
         zoneId: currentZone?.id,
         zoneName: currentZone?.name,
         lat: point.lat,
         lng: point.lng,
+        pixelX: point.pixelX ?? 350,
+        pixelY: point.pixelY ?? 400,
         timestamp: new Date().toISOString(),
         confidence: point.confidence,
         locationStatus: 'simulated',
@@ -158,21 +172,24 @@ export function useDemo() {
         type: 'person_detected',
         personId: 'P-17',
         cameraId: point.cameraId,
+        cameraLat: currentCamera?.lat,
+        cameraLng: currentCamera?.lng,
         zoneId: currentZone?.id,
         zoneName: currentZone?.name,
         lat: point.lat,
         lng: point.lng,
+        pixelX: point.pixelX ?? 350,
+        pixelY: point.pixelY ?? 400,
         timestamp: new Date().toISOString(),
-        message: 'Person #17 detected — monitoring',
+        message: 'Person #17 detected — monitoring active',
         confidence: point.confidence,
       });
     }
 
     updateStats({ activePersons: 1 });
-  }, [zones, upsertPerson, addTrackPoint, addEvent, addAlert, updateStats, setMapCenter, setDemoRunning]);
+  }, [zones, cameras, upsertPerson, addTrackPoint, addEvent, addAlert, updateStats, setMapCenter, setDemoRunning]);
 
   const startDemo = useCallback(() => {
-    // Reset state
     useAppStore.setState({
       persons: [],
       tracks: {},
@@ -202,8 +219,8 @@ export function useDemo() {
       alerts: [],
       demoStep: 0,
       stats: {
-        camerasOnline: 4,
-        camerasTotal: 4,
+        camerasOnline: cameras.filter(c => c.status === 'online').length,
+        camerasTotal: cameras.length,
         activePersons: 0,
         activeAlerts: 0,
         zoneIntrusions: 0,
@@ -213,7 +230,7 @@ export function useDemo() {
       }
     });
     previousZoneTypeRef.current = null;
-  }, [stopDemo]);
+  }, [stopDemo, cameras]);
 
   useEffect(() => {
     if (demoRunning) {
